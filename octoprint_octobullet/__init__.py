@@ -35,7 +35,8 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 
 	def on_after_startup(self):
 		self._connect_bullet(self._settings.get(["access_token"]),
-		                     self._settings.get(["push_channel"]))
+		                     self._settings.get(["push_channel"]),
+							 self._settings.get(["user_alert"]))
 
 	#~~ SettingsPlugin
 
@@ -43,7 +44,7 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 		data = octoprint.plugin.SettingsPlugin.on_settings_load(self)
 
 		# only return our restricted settings to admin users - this is only needed for OctoPrint <= 1.2.16
-		restricted = ("access_token", "push_channel")
+		restricted = ("access_token", "push_channel", "user_alert")
 		for r in restricted:
 			if r in data and (current_user is None or current_user.is_anonymous() or not current_user.is_admin()):
 				data[r] = None
@@ -55,7 +56,8 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 
 		import threading
 		thread = threading.Thread(target=self._connect_bullet, args=(self._settings.get(["access_token"]),
-		                                                             self._settings.get(["push_channel"])))
+		                                                             self._settings.get(["push_channel"]),
+																	 self._settings.get(["user_alert"])))
 		thread.daemon = True
 		thread.start()
 
@@ -63,6 +65,7 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 		return dict(
 			access_token=None,
 			push_channel=None,
+			user_alert=False,
 			printDone=dict(
 				title="Print job finished",
 				body="{file} finished printing in {elapsed_time}"
@@ -71,7 +74,7 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 
 	def get_settings_restricted_paths(self):
 		# only used in OctoPrint versions > 1.2.16
-		return dict(admin=[["access_token"], ["push_channel"]])
+		return dict(admin=[["access_token"], ["push_channel"], ["user_alert"]])
 
 	#~~ TemplatePlugin API
 
@@ -120,6 +123,19 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 
 			title = self._settings.get(["printDone", "title"]).format(**locals())
 			body = self._settings.get(["printDone", "body"]).format(**locals())
+			filename = os.path.splitext(file)[0] + ".jpg"
+
+			self._send_message_with_webcam_image(title, body, filename=filename)
+		elif event == Events.ALERT:
+			file = os.path.basename(payload["file"])
+			elapsed_time_in_seconds = payload["time"]
+
+			import datetime
+			import octoprint.util
+			elapsed_time = octoprint.util.get_formatted_timedelta(datetime.timedelta(seconds=elapsed_time_in_seconds))
+
+			title = "User Alert"
+			body = "Status"
 			filename = os.path.splitext(file)[0] + ".jpg"
 
 			self._send_message_with_webcam_image(title, body, filename=filename)

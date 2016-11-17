@@ -15,6 +15,13 @@
         </div>
     </div>
 
+    <div class="control-group">
+        <label class="control-label">{{ _('User Alert') }}</label>
+        <div class="controls">
+            <input type="checkbox" class="input-block-level" data-bind="value: settings.settings.plugins.octobullet.user_alert">
+        </div>
+    </div>
+
     {% trans %}<p>
         You can also define the tag of a channel here to push the messages to instead of your general Pushbullet
         account. You can read more about Pushbullet's channels <a href="https://www.pushbullet.com/channels" target="_blank">on Pushbullet</a>.
