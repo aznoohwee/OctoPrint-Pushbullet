@@ -202,8 +202,13 @@ class PushbulletPlugin(octoprint.plugin.EventHandlerPlugin,
 
 	def _create_sender(self, token, channel=None):
 		try:
+
 			bullet = pushbullet.PushBullet(token)
-			sender = self._bullet
+
+                        sender = self._sender
+
+                        if self._sender != token:
+                            sender = token
 
 			# Setup channel object if channel setting is present
 			if channel:
